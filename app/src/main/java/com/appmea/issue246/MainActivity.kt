@@ -2,6 +2,8 @@ package com.appmea.issue246
 
 import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var imageLoader: ImageLoader
     lateinit var binding: ActivityMainBinding
 
+    lateinit var adapter: Adapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,10 +38,24 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        adapter = Adapter(imageLoader)
+
         binding.rvItems.also {
             it.layoutManager = LinearLayoutManager(this)
-            it.adapter = Adapter(imageLoader)
+            it.adapter = adapter
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Handler(Looper.getMainLooper()).postDelayed({
+            adapter.items.addAll(
+                mutableListOf(
+                    "https://cities-prod.s3.eu-central-1.amazonaws.com/fe61c0ba-ce65-4872-a8f8-6fea7960878a.png",
+                    "https://cities-dev.s3.eu-central-1.amazonaws.com/2fc066d6-b939-4131-947a-98189ea806db.png",
+                )
+            )
+        }, 3)
     }
 }
 
@@ -46,8 +63,7 @@ class ContentCreator(val imageLoader: ImageLoader, val context: Context, val clC
 
     private var lastAddedId = 0
 
-    private fun createImageContent(): AppCompatImageView {
-        val imageUrl = "https://cities-prod.s3.eu-central-1.amazonaws.com/fe61c0ba-ce65-4872-a8f8-6fea7960878a.png"
+    private fun createImageContent(imageUrl: String): AppCompatImageView {
         val layoutParams = ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         layoutParams.constrainedHeight = true
         layoutParams.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
@@ -77,21 +93,22 @@ class ContentCreator(val imageLoader: ImageLoader, val context: Context, val clC
         return imageView
     }
 
-    fun buildContent() {
-        val view = createImageContent()
+    fun buildContent(s: String) {
+        val view = createImageContent(s)
         clContentContainer.addView(view)
     }
 }
 
 class Adapter(val imageLoader: ImageLoader) : RecyclerView.Adapter<Adapter.VH>() {
 
+    val items = mutableListOf<String>()
 
     class VH(val imageLoader: ImageLoader, itemView: View) : RecyclerView.ViewHolder(itemView) {
         val binding: ItemEventDescriptionBinding = ItemEventDescriptionBinding.bind(itemView)
 
-        fun update() {
+        fun update(s: String) {
             val contentCreator = ContentCreator(imageLoader, itemView.context, binding.clContentContainer)
-            contentCreator.buildContent()
+            contentCreator.buildContent(s)
         }
     }
 
@@ -101,10 +118,10 @@ class Adapter(val imageLoader: ImageLoader) : RecyclerView.Adapter<Adapter.VH>()
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        holder.update()
+        holder.update(items[position])
     }
 
     override fun getItemCount(): Int {
-        return 1
+        return items.size
     }
 }

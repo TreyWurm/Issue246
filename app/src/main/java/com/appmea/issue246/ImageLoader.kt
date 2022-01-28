@@ -161,6 +161,7 @@ class ImageLoader @Inject constructor(
 
         val transformations = mutableListOf<Transformation<Bitmap>>()
         transformations.add(RoundedBorderTransformation(options, ivImage.context))
+        transformations.add(CenterInside())
         requestOptions = requestOptions.transform(MultiTransformation(transformations))
 
         Glide.with(ivImage)
